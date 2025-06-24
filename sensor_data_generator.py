@@ -1,27 +1,47 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+import time
+from datetime import datetime
+import random
+import joblib
+import os
 
-# Generate 30 days of hourly timestamps
-timestamps = pd.date_range(datetime.now() - timedelta(days=30), periods=720, freq='H')
+# Load trained model
+model = joblib.load("failure_model.pkl")
 
-# Simulate machine sensor data
-temperature = np.random.normal(75, 10, size=720)
-pressure = np.random.normal(30, 5, size=720)
-vibration = np.random.normal(1, 0.2, size=720)
+# Columns used in model
+FEATURE_COLS = ["temperature", "pressure", "vibration"]
 
-# Label failures: if temp > 90 and vibration > 1.3
-failure = (temperature > 90) & (vibration > 1.3)
+print("🚀 Starting real-time sensor simulation...\n")
 
-# Combine all into a DataFrame
-df = pd.DataFrame({
-    'timestamp': timestamps,
-    'temperature': temperature.round(2),
-    'pressure': pressure.round(2),
-    'vibration': vibration.round(2),
-    'failure': failure
-})
+while True:
+    # Simulate one data point
+    timestamp = datetime.now()
+    temperature = round(random.uniform(60, 100), 2)
+    pressure = round(random.uniform(0.9, 1.5), 2)
+    vibration = round(random.uniform(0.3, 1.0), 2)
 
-# Save to CSV
-df.to_csv('sensor_data.csv', index=False)
-print("✅ sensor_data.csv created.")
+    # Prepare for prediction
+    df_input = pd.DataFrame([[temperature, pressure, vibration]], columns=FEATURE_COLS)
+    prediction = model.predict(df_input.values)[0]  # Using .values to avoid sklearn warning
+
+    # New row to append
+    new_data = pd.DataFrame([{
+        "timestamp": timestamp,
+        "temperature": temperature,
+        "pressure": pressure,
+        "vibration": vibration,
+        "predicted_failure": prediction
+    }])
+
+    # Append to predicted_failures.csv
+    file_path = "predicted_failures.csv"
+    if os.path.exists(file_path):
+        new_data.to_csv(file_path, mode='a', header=False, index=False)
+    else:
+        new_data.to_csv(file_path, index=False)
+
+    print(f"📡 {timestamp} | Temp: {temperature} | Press: {pressure} | Vib: {vibration} ➜ Predicted Failure: {prediction}")
+
+    # Wait before generating next point (e.g., every 5 sec)
+    time.sleep(5)

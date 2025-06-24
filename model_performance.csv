@@ -1,0 +1,9 @@
+Model,Accuracy
+Decision Tree,0.8666666666666667
+AdaBoost,0.7333333333333333
+Naive Bayes,0.6666666666666666
+Gradient Boosting,0.6333333333333333
+Random Forest,0.6
+Logistic Regression,0.6
+SVM,0.6
+KNN,0.6
